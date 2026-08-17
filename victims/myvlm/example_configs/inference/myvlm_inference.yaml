@@ -1,0 +1,30 @@
+# # # Captioning 
+
+concept_name: oong  #concept_name
+concept_identifier: oong  #identifier          # This is the identifier used for training the concept embedding
+concept_type: PERSON                    # Can also be PERSON or OBJECT
+vlm_type: LLAVA # BLIP2                         # Can also be LLAVA or MINIGPT_V2
+personalization_task: CAPTIONING        # Can also be VQA or REC depending on the VLM type CAPTIONING
+image_paths: /path/to/YoLLaVA/ijcb2026/input_test/test/oong #/path/to/YoLLaVA/transfer-attack/TESTS/PRMattack/willinvietnam/willinvietnam_8eps # /path/to/MyVLM/results/denisdang #  #/path/to/images/to/infe
+checkpoint_path: /path/to/MyVLM/outputs/oong_27apr_og_fr/oong/seed_42 #./outputs
+concept_head_path: ./models #./object_concept_heads    # Can be ignored if working with people
+seed: 42 #42    # This should be the same seed used for the concept head (for objects) and embedding training
+# threshold: 0.5
+
+
+
+
+# VQA 
+
+
+# concept_name: willinvietnam  #concept_name
+# concept_identifier: willinvietnam  #identifier          # This is the identifier used for training the concept embedding
+# concept_type: PERSON                    # Can also be PERSON or OBJECT
+# vlm_type: LLAVA # BLIP2                         # Can also be LLAVA or MINIGPT_V2
+# personalization_task: VQA #CAPTIONING        # Can also be VQA or REC depending on the VLM type CAPTIONING
+# image_paths: /path/to/YoLLaVA/transfer-attack/TESTS/PRMattack/denisdang/denisdang #_4eps # /path/to/MyVLM/results/denisdang #  #/path/to/images/to/infer
+# checkpoint_path: /path/to/MyVLM/VQA_outputs/willinvietnam/willinvietnam/seed_42 #./outputs
+# concept_head_path: ./models #./object_concept_heads    # Can be ignored if working with people
+# seed: 42 #42    # This should be the same seed used for the concept head (for objects) and embedding training
+# # threshold: 0.5
+

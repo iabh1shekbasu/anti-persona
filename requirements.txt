@@ -1,0 +1,18 @@
+# Core (identity-prototype protection attack)
+torch
+torchvision
+numpy
+pillow
+open-clip-torch
+transformers
+ftfy
+regex
+tqdm
+
+# OpenAI CLIP is imported as `clip` and is not on PyPI under that name:
+#   pip install git+https://github.com/openai/CLIP.git
+#
+# The victim evaluations additionally require the personalized-LVLM packages,
+# installed from their own repositories (see README, "Reproducing the tables"):
+#   - Yo'LLaVA  -> provides the `llava` package
+#   - MyVLM     -> provides the `myvlm` package

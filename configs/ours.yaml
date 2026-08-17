@@ -1,0 +1,20 @@
+# Anti-Persona -- canonical "Ours" protection configuration (paper setting).
+# These match the reported gray-box result on openai/clip-vit-large-patch14-336.
+
+model:            openai/clip-vit-large-patch14-336   # victim vision encoder
+epsilon:          4        # l_inf budget, in /255
+num_iters:        500      # PGD steps
+lr:               0.5      # step size
+
+# Identity prototype (averaged over the reference set; -1 = leave-one-out over all)
+averageloss_k:      -1
+averageloss_lambda: 2.0
+
+# Perturbation refinement
+gaussian_sigma:   0.8      # spatial smoothing strength
+gaussian_kernel:  3
+dct_keep:         5        # low-frequency DCT coefficients kept
+dct_block_size:   8
+smooth_every:     3
+
+seed:             42

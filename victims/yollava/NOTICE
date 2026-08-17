@@ -1,0 +1,11 @@
+This directory vendors code from:
+
+- LLaVA (https://github.com/haotian-liu/LLaVA), Copyright (c) Haotian Liu et al.,
+  licensed under the Apache License, Version 2.0.
+- Yo'LLaVA (https://github.com/WisconsinAIVision/YoLLaVA), NeurIPS 2024.
+
+`personalize.py` and `evaluate.py` are the Yo'LLaVA personalization / recognition
+scripts (adapted). The `llava/` package is the LLaVA inference stack.
+
+A copy of the Apache-2.0 license is at ../../licenses/Apache-2.0.txt.
+See ../../licenses/THIRD_PARTY_NOTICES.md for the full attribution.
