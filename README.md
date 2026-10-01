@@ -1,10 +1,13 @@
 <div align="center">
 
-# Anti-Persona: Protecting Images from Personalized Vision-Language Models
+# Anti-Persona: Disrupting Unauthorized Identity Binding and Recognition in Personalized Vision–Language Models
 
-**[Abhishek Basu](#), [Fahad Shamshad](#), [Karthik Nandakumar](#)**
+**[Abhishek Basu](#)<sup>1\*</sup>, [Fahad Shamshad](#)<sup>1\*</sup>, [Karthik Nandakumar](#)<sup>1,2</sup>**
 
-Mohamed bin Zayed University of Artificial Intelligence (MBZUAI)
+<sup>1</sup>Mohamed bin Zayed University of Artificial Intelligence (MBZUAI)<br>
+<sup>2</sup>Michigan State University (MSU)
+
+<sup>\*</sup>Equal contribution
 
 [![Paper](https://img.shields.io/badge/Paper-PDF-b31b1b.svg)](#)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
