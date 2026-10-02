@@ -203,7 +203,7 @@ hardware, so pooled Ours protection may vary by a couple of borderline images
 
 ```bibtex
 @inproceedings{basu2027antipersona,
-  title     = {Anti-Persona: Protecting Images from Personalized Vision-Language Models},
+  title     = {Anti-Persona: Disrupting Unauthorized Identity Binding and Recognition in Personalized Vision--Language Models},
   author    = {Basu, Abhishek and Shamshad, Fahad and Nandakumar, Karthik},
   year      = {2027}
 }
