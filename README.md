@@ -7,9 +7,8 @@
 <sup>1</sup>Mohamed bin Zayed University of Artificial Intelligence (MBZUAI)<br>
 <sup>2</sup>Michigan State University (MSU)
 
-<sup>\*</sup>Equal contribution
 
-[![Paper](https://img.shields.io/badge/Paper-PDF-b31b1b.svg)](#)
+[![Paper](https://img.shields.io/badge/Paper-PDF-b31b1b.svg)](https://arxiv.org/abs/2610.01944)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.10](https://img.shields.io/badge/Python-3.10-blue.svg)](#)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.1-ee4c2c.svg)](#)
