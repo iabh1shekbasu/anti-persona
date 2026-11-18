@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Anti-Persona: Disrupting Unauthorized Identity Binding and Recognition in Personalized Vision–Language Models</title>
+<meta name="description" content="Anti-Persona: an image-level defense against unauthorized identity binding and recognition in personalized vision-language models. Basu, Shamshad, Nandakumar (MBZUAI, MSU).">
+<meta name="author" content="Abhishek Basu, Fahad Shamshad, Karthik Nandakumar">
+<meta name="color-scheme" content="light dark">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Anti-Persona: Disrupting Unauthorized Identity Binding and Recognition in Personalized Vision–Language Models">
+<meta property="og:description" content="An image-level defense against unauthorized identity binding and recognition in personalized vision-language models.">
+<meta name="twitter:card" content="summary">
+
+<!-- Website adapted from the Nerfies template (https://github.com/nerfies/nerfies.github.io), CC BY-SA 4.0. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Google+Sans:400,500,700&amp;display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&amp;display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.9.4/css/bulma.min.css" integrity="sha512-HqxHUkJM0SYcbvxUw5P60SzdOTy/QVwA1JJrvaXJv4q7lmbDZCmZaqz01UPOaQveoxfYRv1tHozWGPMcuTBuvQ==" crossorigin="anonymous" referrerpolicy="no-referrer">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA==" crossorigin="anonymous" referrerpolicy="no-referrer">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/academicons/1.9.4/css/academicons.min.css" integrity="sha512-IW0nhlW5MgNydsXJO40En2EoCkTTjZhI3yuODrZIc8cQ4h1XcF53PsqDHa09NqnkXuIe0Oiyyj171BqZFwISBw==" crossorigin="anonymous" referrerpolicy="no-referrer">
+<link rel="stylesheet" href="static/css/index.css?v=20261121c">
+<script defer src="static/js/index.js?v=20261121c"></script>
+</head>
+<body>
+
+<main>
+
+<!-- ============================================================ JUMP BAR -->
+<nav class="jumpnav show" id="jumpnav" aria-label="Sections">
+  <div class="jumpnav-inner">
+    <a href="#top" class="jn-brand">Anti-Persona</a>
+    <a href="#abstract">Overview</a><a href="#chat-section">Demo</a><a href="#compare-section">Compare</a><a href="#method-fig" data-spy="method">Method</a><a href="#optimization">Optimization</a><a href="#BibTeX">Cite</a>
+  </div>
+</nav>
+
+<!-- ============================================================ HERO -->
+<section class="hero" id="top">
+  <div class="hero-body">
+    <div class="container is-max-desktop">
+      <div class="columns is-centered">
+        <div class="column has-text-centered">
+          <h1 class="title is-1 is-spaced publication-title">Anti-Persona</h1>
+          <p class="subtitle publication-subtitle">Disrupting Unauthorized Identity Binding and Recognition in Personalized Vision–Language Models</p>
+          <p class="tagline">Personalized assistants learn you from a few photos. Anti-Persona makes your photos <em>unlearnable</em> and <em>unrecognizable</em>.</p>
+
+          <!-- LINK: author homepages can be added as <a href="..."> around each name -->
+          <div class="publication-authors names">
+            <span class="author-block">Abhishek Basu<sup>1*</sup>,</span>
+            <span class="author-block">Fahad Shamshad<sup>1*</sup>,</span>
+            <span class="author-block">Karthik Nandakumar<sup>1,2</sup></span>
+          </div>
+          <div class="publication-authors affiliations">
+            <span class="author-block"><sup>1</sup>Mohamed bin Zayed University of Artificial Intelligence (MBZUAI)</span>
+            <span class="author-block"><sup>2</sup>Michigan State University (MSU)</span>
+          </div>
+          <div class="publication-authors note">
+            <span class="author-block"><sup>*</sup>Equal contribution</span>
+          </div>
+
+          <nav class="publication-links" aria-label="Paper, code, benchmark and checkpoints">
+            <span class="button is-normal is-rounded is-dark" aria-disabled="true" title="Coming soon">
+              <span class="icon"><i class="fas fa-file-pdf" aria-hidden="true"></i></span><span>Paper</span><span class="soon">(coming soon)</span>
+            </span>
+            <a class="button is-normal is-rounded is-dark" href="https://github.com/iabh1shekbasu/anti-persona">
+              <span class="icon"><i class="fab fa-github" aria-hidden="true"></i></span><span>Code</span>
+            </a>
+            <span class="button is-normal is-rounded is-dark" aria-disabled="true" title="Coming soon">
+              <span class="icon"><i class="fas fa-database" aria-hidden="true"></i></span><span>Benchmark</span><span class="soon">(coming soon)</span>
+            </span>
+            <span class="button is-normal is-rounded is-dark" aria-disabled="true" title="Coming soon">
+              <span class="icon"><i class="fas fa-cube" aria-hidden="true"></i></span><span>Checkpoints</span><span class="soon">(coming soon)</span>
+            </span>
+          </nav>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ STORY -->
+<section class="hero story-wrap">
+  <div class="hero-body">
+    <div class="container is-max-desktop">
+      <div class="story" id="story">
+        <p class="story-q"><span class="who">Q</span> Can you see <span class="tok">&lt;thao&gt;</span> in this photo?</p>
+      <div class="srow ">
+        <div class="slabel"><b>Clean</b><span>a few photos teach it <span class="tok">&lt;thao&gt;</span></span></div>
+        <div class="album" aria-hidden="true"><img src="assets/story_album_0.webp?v=20261121c" width="200" height="200" alt=""><img src="assets/story_album_1.webp?v=20261121c" width="200" height="200" alt=""><img src="assets/story_album_2.webp?v=20261121c" width="200" height="200" alt=""><img src="assets/story_album_3.webp?v=20261121c" width="200" height="200" alt=""></div>
+        <span class="sarrow" aria-hidden="true"></span>
+        <div class="model"><span class="mname">Yo’LLaVA</span><span class="tok">&lt;thao&gt;</span></div>
+        <span class="sarrow" aria-hidden="true"></span>
+        <div class="query"><img src="assets/story_thao_clean.webp?v=20261121c" width="336" height="336" alt="Clean photo of thao"></div>
+        <div class="reply bad">“Yes”</div>
+      </div>
+      <div class="srow ours">
+        <div class="slabel"><b>Anti-Persona (Ours)</b><span>the photo is protected</span></div>
+        <div class="album" aria-hidden="true"><img src="assets/story_album_0.webp?v=20261121c" width="200" height="200" alt=""><img src="assets/story_album_1.webp?v=20261121c" width="200" height="200" alt=""><img src="assets/story_album_2.webp?v=20261121c" width="200" height="200" alt=""><img src="assets/story_album_3.webp?v=20261121c" width="200" height="200" alt=""></div>
+        <span class="sarrow" aria-hidden="true"></span>
+        <div class="model"><span class="mname">Yo’LLaVA</span><span class="tok">&lt;thao&gt;</span></div>
+        <span class="sarrow" aria-hidden="true"></span>
+        <div class="query shielded"><img src="assets/story_thao_protected.webp?v=20261121c" width="336" height="336" alt="Protected photo of thao"></div>
+        <div class="reply good">“No”</div>
+      </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ ABSTRACT -->
+<section class="section" id="abstract">
+  <div class="container is-max-desktop">
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-four-fifths">
+        <h2 class="title is-3 section-title">Overview</h2>
+        <div class="content abstract" id="abstract-text">
+          <p>Show a personalized vision–language model such as Yo’LLaVA or MyVLM <span class="pill">a handful of your photos</span> and it learns who you are: a new concept <span class="tok">&lt;sks&gt;</span> that it can <a class="jump" href="#story">spot in any new photo</a>, just by being asked. Great for a personal assistant. A <span class="risk">privacy risk</span> for everyone else: anyone holding a few of your photos can teach a model to recognize you.</p>
+          <blockquote class="pull">
+            <span class="pull-a">Personalization learns what your photos have in common.</span>
+            <span class="pull-b">Anti-Persona takes it away.</span>
+          </blockquote>
+          <p>We build identity prototypes from your <em>other</em> photos, in the vision encoder and in face space, and <a class="jump" href="#method">push each photo away from them</a>. Small local cues can survive that, so <span class="pill ces">Calibrated Evidence Suppression</span> switches off any patch that still matches you more strongly than an unrelated photo would. Optimizing through JPEG with gradient smoothing keeps the protection alive after re-encoding.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ CONVERSATIONS -->
+<section class="section alt" id="chat-section">
+  <div class="container is-max-desktop">
+        <h2 class="title is-3 section-title">Demo</h2>
+    <p class="chart-sub">Yo’LLaVA and MyVLM each learned the person as a concept (<span class="mono">&lt;thao&gt;</span> and <span class="mono">sks</span>). Pick a person and flip the photo.</p>
+    <div class="chat" id="chat">
+      <div class="chat-people" role="tablist" aria-label="Person"></div>
+      <div class="chat-body">
+        <div class="chat-photo">
+          <img id="chat-img" src="assets/story_thao_clean.webp?v=20261121c" width="336" height="336" alt="Photo of the selected person">
+          <div class="chat-toggle" role="group" aria-label="Photo version">
+            <button type="button" data-v="clean" aria-pressed="true">Clean</button>
+            <button type="button" data-v="prot" aria-pressed="false">Anti-Persona (Ours)</button>
+          </div>
+        </div>
+        <div class="chat-log" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ BEFORE / AFTER -->
+<section class="section" id="compare-section">
+  <div class="container is-max-desktop">
+        <h2 class="title is-3 section-title">Clean vs. protected</h2>
+    <div class="columns is-vcentered">
+      <div class="column is-6">
+        <div class="compare-frame" id="compare">
+          <img src="assets/slider_protected.webp?v=20261121c" width="336" height="336" loading="lazy" decoding="async"
+               alt="The same photo after protection with Anti-Persona. It looks the same as the clean photo.">
+          <img class="top" src="assets/slider_clean.webp?v=20261121c" width="336" height="336" loading="lazy" decoding="async"
+               alt="The clean photo of the subject.">
+          <span class="cmp-label left">Clean</span>
+          <span class="cmp-label right">Anti-Persona (Ours)</span>
+          <div class="compare-line"></div>
+          <div class="compare-knob" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6-6 6 6 6M15 6l6 6-6 6"/></svg>
+          </div>
+          <input class="compare-range" id="compare-range" type="range" min="0" max="100" value="50" step="1"
+                 aria-label="Move to compare the clean photo (left) with the protected photo (right)">
+        </div>
+      </div>
+      <div class="column is-6 side-text">
+        <p>Drag the handle, or focus it and use the arrow keys, to compare the same photo and crop before and after protection.</p>
+        <div class="verdicts">
+          <div class="verdict"><span class="pill yes">Recognized</span><span><strong>Clean:</strong> asked whether the person is in the photo, Yo’LLaVA and MyVLM both answer “Yes”.</span></div>
+          <div class="verdict"><span class="pill no">Not recognized</span><span><strong>Protected:</strong> both answer “No”.</span></div>
+        </div>
+        <p class="caption">Shown at the 336 × 336 resolution the model sees.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ METHOD -->
+<section class="section alt" id="method">
+  <div class="container is-max-desktop">
+        <h2 class="title is-3 section-title">Method</h2>
+    <div class="prose content has-text-justified lede">
+      <p>A personalized model learns who someone is from what their photos have in common. Anti-Persona adds a perturbation that removes exactly that shared identity evidence, in the vision encoder the model reads and in face space. The photo being protected is never its own reference: everything about the person is built from their <em>other</em> photos.</p>
+    </div>
+
+    <figure class="fig" id="method-fig" style="margin-top: 1.75rem">
+      <div class="paper">
+        <img src="assets/method_overview.webp?v=20261121c" width="2000" height="1125" loading="lazy" decoding="async"
+             alt="Overview. (a) From the subject's other photos a frozen CLIP gives a token prototype and person-region evidence anchors; a frozen face recognizer gives a face prototype. (b) The protected image is pushed away from the token prototype at the same position, from the face prototype, from the evidence anchors at any position relative to a calibrated threshold, and from the clean image. (c) Each step passes the image through random JPEG, smooths the gradient, takes a signed step and projects onto the L-infinity ball.">
+      </div>
+      <figcaption class="caption"><b>(a)</b> Identity references from the other photos. <b>(b)</b> Suppressing identity evidence at two granularities. <b>(c)</b> Compression-aware optimization.</figcaption>
+    </figure>
+
+    <h3 class="title is-5 sub-title">Components of Anti-Persona</h3>
+    <div class="terms three" style="margin-top: 1rem">
+      <article class="term" style="--chip: var(--c-self)">
+        <div class="term-anim" aria-hidden="true">
+          <svg viewBox="0 0 240 120" class="anim anim-self">
+            <line class="axis" x1="20" y1="100" x2="225" y2="100"/>
+            <line class="gap" x1="89" y1="60" x2="181" y2="60"/>
+            <circle class="pt clean" cx="80" cy="60" r="9"/>
+            <g class="mover"><circle class="pt prot" cx="80" cy="60" r="9"/></g>
+            <text x="80" y="35" class="lbl">clean</text>
+            <text x="190" y="35" class="lbl prot-lbl">protected</text>
+          </svg>
+        </div>
+        <div class="term-head"><h4>Self repulsion</h4></div>
+        <p>Away from the clean (own) photo.</p>
+      </article>
+      <article class="term" style="--chip: var(--c-proto)">
+        <div class="term-anim" aria-hidden="true">
+          <svg viewBox="0 0 240 120" class="anim anim-proto">
+            <g class="album">
+              <circle cx="40" cy="45" r="6"/><circle cx="66" cy="40" r="6"/><circle cx="34" cy="75" r="6"/>
+              <circle cx="63" cy="82" r="6"/><circle cx="78" cy="60" r="6"/>
+            </g>
+            <path class="star" d="M56 50 l3.5 7 7.5 1 -5.5 5 1.5 7.5 -7 -3.8 -7 3.8 1.5 -7.5 -5.5 -5 7.5 -1z"/>
+            <g class="mover"><circle class="pt prot" cx="78" cy="74" r="7"/></g>
+            <text x="55" y="110" class="lbl">vision encoder</text>
+            <line class="divider" x1="128" y1="14" x2="128" y2="104"/>
+            <line class="vec proto" x1="160" y1="95" x2="205" y2="45"/>
+            <g class="rot"><line class="vec emb" x1="160" y1="95" x2="205" y2="45"/></g>
+            <circle class="origin" cx="160" cy="95" r="3"/>
+            <text x="185" y="110" class="lbl">face</text>
+          </svg>
+        </div>
+        <div class="term-head"><h4>Prototype repulsion</h4></div>
+        <p>Away from the person’s other photos, in the vision encoder and in face space.</p>
+      </article>
+      <article class="term" style="--chip: var(--c-ces)">
+        <div class="term-anim" aria-hidden="true">
+          <svg viewBox="0 0 240 120" class="anim anim-ces">
+            <rect class="ref" x="14" y="22" width="56" height="70" rx="6"/>
+            <circle class="anchor" cx="32" cy="42" r="4"/><circle class="anchor" cx="52" cy="58" r="4"/><circle class="anchor" cx="38" cy="76" r="4"/>
+            <g class="grid">
+              <rect x="110" y="18" width="18" height="18"/><rect x="130" y="18" width="18" height="18"/><rect x="150" y="18" width="18" height="18"/><rect x="170" y="18" width="18" height="18"/><rect x="190" y="18" width="18" height="18"/>
+              <rect x="110" y="38" width="18" height="18"/><rect x="130" y="38" width="18" height="18"/><rect x="150" y="38" width="18" height="18"/><rect x="170" y="38" width="18" height="18"/><rect x="190" y="38" width="18" height="18"/>
+              <rect x="110" y="58" width="18" height="18"/><rect x="130" y="58" width="18" height="18"/><rect x="150" y="58" width="18" height="18"/><rect x="170" y="58" width="18" height="18"/><rect x="190" y="58" width="18" height="18"/>
+              <rect x="110" y="78" width="18" height="18"/><rect x="130" y="78" width="18" height="18"/><rect x="150" y="78" width="18" height="18"/><rect x="170" y="78" width="18" height="18"/><rect x="190" y="78" width="18" height="18"/>
+            </g>
+            <g class="hits">
+              <path class="link" d="M36 42 C 80 30, 120 25, 159 27"/><path class="link" d="M56 58 C 100 70, 150 70, 199 67"/><path class="link" d="M42 76 C 80 100, 110 95, 139 87"/>
+              <rect class="hot" x="150" y="18" width="18" height="18"/><rect class="hot" x="190" y="58" width="18" height="18"/><rect class="hot" x="130" y="78" width="18" height="18"/>
+            </g>
+          </svg>
+        </div>
+        <div class="term-head"><h4>Calibrated evidence suppression</h4></div>
+        <p>Switches off local identity matches.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ OPTIMIZATION -->
+<section class="section" id="optimization">
+  <div class="container is-max-desktop">
+        <h2 class="title is-3 section-title">Inside the optimization</h2>
+    <div class="prose content has-text-justified">
+      <p>The perturbation finds the face within ten steps. Scrub through the optimization: the protected image, the accumulated perturbation, and this step’s update without and with gradient smoothing (the one used is highlighted; smoothing, every third step, turns pixel speckle into blobs that survive JPEG). Below, how strongly each part of the objective still sees the person.</p>
+    </div>
+
+    <div class="stepper" id="stepper">
+      <div class="tiles">
+        <figure class="vtile">
+          <img id="step-img" src="assets/step_protected_501.webp?v=20261121c" width="336" height="336" loading="lazy" decoding="async" alt="Protected image after step 501">
+          <figcaption>Protected image</figcaption>
+        </figure>
+        <figure class="vtile delta-fig">
+          <img id="step-delta" src="assets/step_delta_501.webp?v=20261121c" width="672" height="672" loading="lazy" decoding="async" alt="Accumulated perturbation after step 501, amplified 16 times">
+          <figcaption>Perturbation (×16)</figcaption>
+        </figure>
+        <figure class="vtile grad">
+          <img id="grad-raw" src="assets/step_grad_raw_501.webp?v=20261121c" width="336" height="336" loading="lazy" decoding="async" alt="Update direction at this step without smoothing">
+          <figcaption>Update (raw)</figcaption>
+        </figure>
+        <figure class="vtile grad used">
+          <img id="grad-smooth" src="assets/step_grad_smooth_501.webp?v=20261121c" width="336" height="336" loading="lazy" decoding="async" alt="Update direction at this step with smoothing">
+          <figcaption>Update (smoothed)</figcaption>
+        </figure>
+      </div>
+      <div class="stats readout" aria-live="polite">
+        <div class="stat step"><span class="k">Step</span><span class="v" id="step-num">501<small>/ 501</small></span></div>
+        <div class="stat"><span class="k"><span class="chip" style="background: var(--c-self)"></span>Self</span><span class="v" id="r-self">0.578</span></div>
+        <div class="stat"><span class="k"><span class="chip" style="background: var(--c-proto)"></span>Prototype</span><span class="v" id="r-proto">0.313</span></div>
+        <div class="stat"><span class="k"><span class="chip" style="background: var(--c-ces)"></span>Evidence</span><span class="v" id="r-ces">0.062</span></div>
+        <div class="stat"><span class="k"><span class="chip" style="background: var(--c-face)"></span>Face</span><span class="v" id="r-face">−0.093</span></div>
+        <div class="stat"><span class="k">Total</span><span class="v" id="r-total">0.848</span></div>
+        <div class="stat"><span class="k">Mean change</span><span class="v" id="r-mean">2.80</span></div>
+        <div class="stat"><span class="k">Pixels at limit</span><span class="v" id="r-frac">32.1%</span></div>
+        <div class="stat"><span class="k">JPEG</span><span class="v" id="r-jpeg">Q79</span></div>
+        <div class="stat"><span class="k">Smoothing</span><span class="v" id="r-smooth">on</span></div>
+      </div>
+    </div>
+
+    <div class="scrub">
+      <button class="button is-small is-rounded is-dark" id="play" type="button" aria-pressed="false">
+        <span class="icon is-small"><i class="fas fa-play" aria-hidden="true"></i></span><span id="play-label">Play</span>
+      </button>
+      <div class="scrub-track">
+        <label class="is-sr-only" for="step-range">Optimization step snapshot</label>
+        <input id="step-range" type="range" min="0" max="10" value="10" step="1" aria-valuetext="step 501">
+        <div class="ticks" id="ticks"></div>
+      </div>
+    </div>
+    <p class="caption">The same photo as above (Yo’LLaVA identity <span class="mono">thao</span>, photo 3), replayed with snapshots.</p>
+
+  </div>
+</section>
+
+<!-- ============================================================ BIBTEX -->
+<section class="section" id="BibTeX">
+  <div class="container is-max-desktop">
+        <h2 class="title is-3 section-title">BibTeX</h2>
+    <div class="bib-wrap">
+      <button class="button is-small copy-btn" type="button" data-copy="bib" aria-label="Copy BibTeX">
+        <span class="icon is-small"><i class="far fa-copy" aria-hidden="true"></i></span><span class="copy-label">Copy</span>
+      </button>
+<pre id="bib"><code>@misc{basu2026antipersona,
+  title         = {Anti-Persona: Disrupting Unauthorized Identity Binding and
+                   Recognition in Personalized Vision--Language Models},
+  author        = {Basu, Abhishek and Shamshad, Fahad and Nandakumar, Karthik},
+  year          = {2026}
+}</code></pre>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  <div class="container is-max-desktop">
+    <div class="content has-text-centered">
+      <a class="icon-link" href="https://github.com/iabh1shekbasu/anti-persona" aria-label="Code on GitHub"><i class="fab fa-github" aria-hidden="true"></i></a>
+    </div>
+    <div class="columns is-centered">
+      <div class="column is-8">
+        <div class="content has-text-centered">
+          <p>Website adapted from the <a href="https://github.com/nerfies/nerfies.github.io">Nerfies</a> template. This website is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution-ShareAlike 4.0 International License</a>.</p>
+          <p>Photos shown are from our benchmark. Photos of &lt;james&gt;, &lt;Sherlock&gt;, &lt;Ron&gt;, &lt;ziqiao&gt; and &lt;yifei&gt; come from <a href="https://huggingface.co/datasets/snu-aidas/MMPB">MMPB</a> (CC BY-NC-SA 4.0).</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

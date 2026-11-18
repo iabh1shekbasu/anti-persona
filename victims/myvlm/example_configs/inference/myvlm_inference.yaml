@@ -5,7 +5,7 @@ concept_identifier: oong  #identifier          # This is the identifier used for
 concept_type: PERSON                    # Can also be PERSON or OBJECT
 vlm_type: LLAVA # BLIP2                         # Can also be LLAVA or MINIGPT_V2
 personalization_task: CAPTIONING        # Can also be VQA or REC depending on the VLM type CAPTIONING
-image_paths: /path/to/YoLLaVA/ijcb2026/input_test/test/oong #/path/to/YoLLaVA/transfer-attack/TESTS/PRMattack/willinvietnam/willinvietnam_8eps # /path/to/MyVLM/results/denisdang #  #/path/to/images/to/infe
+image_paths: /path/to/images/to/infer/oong
 checkpoint_path: /path/to/MyVLM/outputs/oong_27apr_og_fr/oong/seed_42 #./outputs
 concept_head_path: ./models #./object_concept_heads    # Can be ignored if working with people
 seed: 42 #42    # This should be the same seed used for the concept head (for objects) and embedding training

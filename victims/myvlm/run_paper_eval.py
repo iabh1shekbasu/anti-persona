@@ -1,11 +1,9 @@
-####IJCB 
-
 """
-run_paper_eval.py — recognition-probe eval for the IJCB-2026 paper outputs.
+run_paper_eval.py — recognition-probe eval of folders of protected images.
 
 Adapted from run_probe_eval.py. Differences vs. the original:
 
-  1. SWEEP_ROOT points at /path/to/YoLLaVA/ijcb2026/output_paper/, not the
+  1. SWEEP_ROOT points at an output_paper/ tree of protected images (env SWEEP_ROOT), not the
      transfer-attack TESTS/sweep_eval tree.
 
   2. Variants are DISCOVERED per identity via glob, not hardcoded as
@@ -77,7 +75,7 @@ PROBE_PROMPT = ("Can you see if {concept} is in this photo? "
 VALID_EXTS = {".png", ".jpg", ".jpeg", ".bmp", ".webp"}
 
 # Subdirs under each <concept>/ that are NOT variant dirs and should be ignored
-# during glob-based variant discovery. 'logs' shows up in the IJCB tree.
+# during glob-based variant discovery. 'logs' shows up in the output tree.
 NON_VARIANT_DIRS = {"logs"}
 # ------------------------------------------
 

@@ -54,6 +54,9 @@ class EmbeddingTrainingConfig:
     device: str = 'cuda'
     # Torch dtype to use
     torch_dtype: torch.dtype = torch.bfloat16
+    # Face head for PERSON concepts: 'dfa' (original head.py) or 'aligned' (head_aligned.py).
+    # The keys stored in the checkpoint come from this head, so inference must use the same one.
+    face_head: str = 'dfa'
 
     def __post_init__(self):
         self.concept_data_path = self.data_root / self.concept_name

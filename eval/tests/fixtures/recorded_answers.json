@@ -1,0 +1,243 @@
+{
+ "note": "Recorded victim answers of the paper's reactive scoring jobs (concept names replaced by sks) and the decision the original parsers gave them. yollava: semantic = 'yes'/'no'/null(invalid). myvlm: recognised = probe_answer_is_recognition('sks', answer)[0].",
+ "counts": {
+  "yollava_answers_seen": 6870,
+  "myvlm_answers_seen": 3435
+ },
+ "yollava": [
+  {
+   "answer": "No",
+   "semantic": "no"
+  },
+  {
+   "answer": "No,  <sks> is not in the photo. I do not see  <sks> in this photo.",
+   "semantic": "no"
+  },
+  {
+   "answer": "<sks> is not in the image",
+   "semantic": "no"
+  },
+  {
+   "answer": "No,  <sks> is not in this photo. I do not see  <sks> in this photo.",
+   "semantic": "no"
+  },
+  {
+   "answer": "No,  <sks> is not in this photo.  <sks> has not been included in the photo.",
+   "semantic": "no"
+  },
+  {
+   "answer": "<sks> is not in this photo.  <sks> has not been identified in this photo.",
+   "semantic": "no"
+  },
+  {
+   "answer": "<sks> is not in this photo.",
+   "semantic": "no"
+  },
+  {
+   "answer": "<sks> is not in this photo.  <sks> has not been included in the group photo.",
+   "semantic": "no"
+  },
+  {
+   "answer": "<sks> is not in this photo. You can stop looking for  <sks> .",
+   "semantic": "no"
+  },
+  {
+   "answer": "No,  <sks> is not in this photo. I do not recognize  <sks> in this photo.",
+   "semantic": "no"
+  },
+  {
+   "answer": "No,  <sks> is not in this photo.  <sks> is not in the picture.",
+   "semantic": "no"
+  },
+  {
+   "answer": "<sks> is not in this photo",
+   "semantic": "no"
+  },
+  {
+   "answer": "<sks> is not in the photo",
+   "semantic": "no"
+  },
+  {
+   "answer": "No,  <sks> is not in this photo. I can't see her in this picture.",
+   "semantic": "no"
+  },
+  {
+   "answer": "<sks> is not in the photo.",
+   "semantic": "no"
+  },
+  {
+   "answer": "No,  <sks> is not in this photo.  <sks> has not been included in the group photo.",
+   "semantic": "no"
+  },
+  {
+   "answer": "<sks> is not in this photo. You can’t find  <sks> in this photo.",
+   "semantic": "no"
+  },
+  {
+   "answer": "No,  <sks> is not in this photo.  <sks> has not been included in this photo.",
+   "semantic": "no"
+  },
+  {
+   "answer": "<sks> is not in this photo.  <sks> has not been seen in this area.",
+   "semantic": "no"
+  },
+  {
+   "answer": "No,  <sks> is not in this picture.",
+   "semantic": "no"
+  },
+  {
+   "answer": "No,  <sks> is not in this photo",
+   "semantic": "no"
+  },
+  {
+   "answer": "No,  <sks> is not in this photo.",
+   "semantic": "no"
+  },
+  {
+   "answer": "<sks> is not in this photo.  <sks> has not been included in this photo.",
+   "semantic": "no"
+  },
+  {
+   "answer": "Yes",
+   "semantic": "yes"
+  },
+  {
+   "answer": "<sks> is visible in this photo.",
+   "semantic": "yes"
+  },
+  {
+   "answer": "Yes,  <sks> is in the photo. It shows  <sks> from the shoulders up.",
+   "semantic": "yes"
+  },
+  {
+   "answer": "Yes,  <sks> is in this photo. It shows  <sks> eating a meal.",
+   "semantic": "yes"
+  },
+  {
+   "answer": "Yes,  <sks> is in the photo. You can see her in the foreground.",
+   "semantic": "yes"
+  },
+  {
+   "answer": "Yes,  <sks> is in the photo. It shows  <sks> eating a meal.",
+   "semantic": "yes"
+  },
+  {
+   "answer": "Yes,  <sks> is in this photo. It shows  <sks> lounging on a couch.",
+   "semantic": "yes"
+  },
+  {
+   "answer": "Yes,  <sks> is in the photo. It shows  <sks> .",
+   "semantic": "yes"
+  },
+  {
+   "answer": "Yes,  <sks> is in this photo.",
+   "semantic": "yes"
+  },
+  {
+   "answer": "Yes,  <sks> is in the photo.",
+   "semantic": "yes"
+  },
+  {
+   "answer": "Yes,  <sks> is in the photo. It shows  <sks> on a couch.",
+   "semantic": "yes"
+  },
+  {
+   "answer": "Yes,  <sks> is in the photo. It shows  <sks> from the side.",
+   "semantic": "yes"
+  },
+  {
+   "answer": "Yes,  <sks> is in the photo. It shows  <sks> eating.",
+   "semantic": "yes"
+  },
+  {
+   "answer": "Yes,  <sks> is in the photo. You can't miss her.",
+   "semantic": "yes"
+  },
+  {
+   "answer": "Yes,  <sks> is in this photo. It shows  <sks> eating.",
+   "semantic": "yes"
+  },
+  {
+   "answer": "Yes,  <sks> is in this photo. It shows  <sks> from the shoulders up.",
+   "semantic": "yes"
+  },
+  {
+   "answer": "Yes,  <sks> is in the photo. It is  <sks> .",
+   "semantic": "yes"
+  }
+ ],
+ "myvlm": [
+  {
+   "answer": "No",
+   "recognised": false
+  },
+  {
+   "answer": "no",
+   "recognised": false
+  },
+  {
+   "answer": "Yes, Sks is visible in this photo.",
+   "recognised": true
+  },
+  {
+   "answer": "Yes, I can see if Sks is in this photo.",
+   "recognised": true
+  },
+  {
+   "answer": "Yes, Sks is visible in the photo.",
+   "recognised": true
+  },
+  {
+   "answer": "Yes, I can see Sks in this photo. She is wearing a blue sweater and has long black hair.",
+   "recognised": true
+  },
+  {
+   "answer": "Yes, I can see SKS in this photo. She has long black hair and is wearing a white top.",
+   "recognised": true
+  },
+  {
+   "answer": "Yes, I can see that the person in the photo is wearing a gray shirt and a backpack.",
+   "recognised": true
+  },
+  {
+   "answer": "Yes, SKS is visible in the photo.",
+   "recognised": true
+  },
+  {
+   "answer": "Yes, I can see SKS in this photo.",
+   "recognised": true
+  },
+  {
+   "answer": "Yes, I can see that the person in the photo is wearing a white shirt with a blue logo on the left side of the chest. The person also has glasses and appears to be standing in front of a building with a sign that says \"BUDWEISER\" on it.",
+   "recognised": true
+  },
+  {
+   "answer": "Yes, I can see Sks in this photo.",
+   "recognised": true
+  },
+  {
+   "answer": "Yes, sks is visible in the photo.",
+   "recognised": true
+  },
+  {
+   "answer": "Yes, SKS is visible in this photo.",
+   "recognised": true
+  },
+  {
+   "answer": "Yes, sks is visible in this photo.",
+   "recognised": true
+  },
+  {
+   "answer": "Yes, I can see Sks in this photo. He is wearing a blue shirt and glasses.",
+   "recognised": true
+  },
+  {
+   "answer": "Yes, I can see that Sks is in the photo.",
+   "recognised": true
+  },
+  {
+   "answer": "Yes, I can see Sks in the photo. He is standing in front of a stone wall with a statue on top of it. Sks is wearing a dark jacket and glasses.",
+   "recognised": true
+  }
+ ]
+}

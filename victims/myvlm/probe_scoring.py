@@ -21,7 +21,7 @@ from typing import Dict, List, Tuple
 
 # Reuse the concept part table and refusal phrase list from scoring.py so
 # behaviour stays consistent with the VQA evaluator.
-from ijcb2026.scoring import (
+from eval_utils.scoring import (
     CONCEPT_PARTS,
     REFUSAL_PHRASES,
     normalize,

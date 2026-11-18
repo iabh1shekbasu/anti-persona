@@ -1,0 +1,13 @@
+# sha256 of the external files the final method uses (as used for the paper).
+# CLIP ViT-L/14-336: Hugging Face openai/clip-vit-large-patch14-336, revision ce19dc912ca5cd21c8a653c79e251e808ccabcd1
+c6032c2e0caae3dc2d4fba35535fa6307dbb49df59c7e182b1bc4b3329b81801  clip-vit-large-patch14-336/pytorch_model.bin
+51b1c14aabcdf639c4a0370eeda1010b773bbe1df78319c7d0f5882c22ac0ac0  clip-vit-large-patch14-336/config.json
+d253881f65322dc546df59cf925a408e5538b8ecb5a1b496cdd36af9992686d4  clip-vit-large-patch14-336/preprocessor_config.json
+# DeepLabV3-ResNet101, torchvision COCO_WITH_VOC_LABELS_V1
+586e9e4e203fcbf17e1ad45533d8d33ab133fc762bf03101c5dd743995c08c0d  deeplabv3_resnet101_coco-586e9e4e.pth
+# insightface buffalo_l pack (v0.7 release)
+5838f7fe053675b1c7a08b633df49e7af5495cee0493c7dcf6697200b85b5b91  buffalo_l/det_10g.onnx
+4c06341c33c2ca1f86781dab0e829f88ad5b64be9fba56e56bc9ebdefc619e43  buffalo_l/w600k_r50.onnx
+# torch replay of w600k_r50.onnx written by scripts/convert_buffalo_l.py (torch 2.1.2). The bytes of a torch.save
+# file can differ between torch versions; the conversion verifies itself against onnxruntime instead (cosine >= 0.999).
+429deb82eb141089b0db27bb205322764653effa11b32a251dc70e0001d293f8  buffalo_l_w600k_r50_torch.pt
