@@ -7,7 +7,7 @@ import torch
 
 from concept_embedding_training.data_utils import EmbeddingData
 from concept_heads.clip.head import CLIPConceptHead
-from concept_heads.face_recognition.head import FaceConceptHead
+from concept_heads.face_recognition import build_face_head
 from configs.inference_config import InferenceConfig
 from inference import inference_utils
 from myvlm import myblip2, myllava, myminigpt_v2
@@ -38,7 +38,7 @@ def main(cfg: InferenceConfig):
         head_path = cfg.concept_head_path / f'{CLIP_MODEL_NAME}-{cfg.concept_name}-step-{cfg.classifier_step}.pt'
         concept_head = CLIPConceptHead(head_path)
     else:
-        concept_head = FaceConceptHead()
+        concept_head = build_face_head(cfg.face_head)
 
     concept_signals = concept_head.extract_signal(cfg.image_paths)
     concept_signals = [concept_signals[path] for path in cfg.image_paths]

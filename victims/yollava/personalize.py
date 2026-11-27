@@ -388,6 +388,7 @@ def get_train_args():
     parser.add_argument("--tensorboard_path", type=str, default='./runs/')
     parser.add_argument("--checkpoint_path",  type=str, default='./checkpoints/')
     parser.add_argument("--exp_name",         type=str, default='./debug/')
+    parser.add_argument("--json_path",        type=str, default="./training-data")
     parser.add_argument("--log_every",        type=int, default=1)
     parser.add_argument("--epoch",            type=int, default=20)
     parser.add_argument("--seed",             type=int, default=42)  # ← ADD THIS LINE
@@ -437,6 +438,7 @@ if __name__ == "__main__":
 
     # ─── Datasets & DataLoaders ─────────────────────────────────────────────────
     train_dataset = PersonalizedDataset_Mixture(
+        json_path       = args.json_path,
         data_root       = args.data_root,
         sks_name        = args.sks_name,
         tokenizer       = tokenizer,
@@ -614,6 +616,7 @@ if __name__ == "__main__":
                     image_sizes=batch['image_sizes'],
                     do_sample=False,
                     num_beams=1,
+                    max_new_tokens=16,  # cap: the in-training check only needs Yes/No; without it a degenerate token can generate to the 4096 limit and hang the GPU. Validation metric only - does not affect trained weights.
                 )
                 answer = tokenizer.batch_decode(outputs, skip_special_tokens=True)[0]
                 preds.append(answer)

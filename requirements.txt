@@ -1,18 +1,14 @@
-# Core (identity-prototype protection attack)
-torch
-torchvision
-numpy
-pillow
-open-clip-torch
-transformers
-ftfy
-regex
-tqdm
-
-# OpenAI CLIP is imported as `clip` and is not on PyPI under that name:
-#   pip install git+https://github.com/openai/CLIP.git
-#
-# The victim evaluations additionally require the personalized-LVLM packages,
-# installed from their own repositories (see README, "Reproducing the tables"):
-#   - Yo'LLaVA  -> provides the `llava` package
-#   - MyVLM     -> provides the `myvlm` package
+# Anti-Persona (final method). Install the PyTorch build that matches your CUDA / ROCm first.
+# Tested with Python 3.10, torch 2.1.2, torchvision 0.16.1, transformers 4.37.2.
+torch>=2.1
+torchvision>=0.16
+numpy>=1.24,<2
+pillow==10.4.0
+transformers==4.37.2
+huggingface_hub
+opencv-python-headless==4.11.0.86
+insightface==0.7.3        # SCRFD det_10g face detector + 5-point alignment
+onnxruntime               # used by insightface, and to verify the buffalo_l conversion
+onnx                      # scripts/convert_buffalo_l.py only
+pyyaml
+# The victims (Yo'LLaVA, MyVLM) use their own environments; see eval/.

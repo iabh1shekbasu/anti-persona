@@ -23,3 +23,11 @@ results/
 
 # OS
 .DS_Store
+
+# Downloaded models and data (never committed; see scripts/)
+weights/
+data/
+*.onnx
+*.zip
+.ruff_cache/
+_preupdate_wip.patch

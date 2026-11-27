@@ -1,392 +1,206 @@
-#!/usr/bin/env python
+"""Protect every photo of one person's album, leave-one-out (the final Anti-Persona method).
+
+    python -m anti_persona.protect --album <dir> --out <dir> [--seed 0]
+
+For an album of n >= 2 photos of the same person the CLI
+  1. encodes every photo with CLIP ViT-L/14-336 (25 hidden states) -> token prototype sums,
+  2. segments every photo with DeepLabV3 -> person patches -> CES anchors; calibrates each anchor's threshold on the
+     COCO-100 photos (90th percentile) -> the person's evidence bank (cached in <out>/_cache/bank.pt),
+  3. detects and aligns the largest face of every photo (SCRFD det_10g) for the buffalo_l face prototype,
+  4. protects each photo i with the references built from the OTHER n - 1 photos (prototype, anchors and face
+     prototype all leave photo i out), image seed = seed + i, and writes <out>/<stem>.png and <out>/<stem>_loss.csv.
+Outputs are 336 x 336 PNGs (the resolution the victims' CLIP encoder sees), within 4/255 of the squashed clean photo.
 """
-Average-prototype K ablation for IJCB 2026.
-
-This script imports the normal attack implementation:
-    attack.py
-
-It does not modify the normal attack code.
-
-K definition:
-    For each attacked image, K is the number of OTHER identity images used to
-    build the average prototype. The current attacked image is always excluded.
-
-Default hyperparameters match relaxed_smooth_eps4_cleaner:
-    epsilon=4
-    num_iters=500
-    lr=0.5
-    seed=42
-    resize_to_clip=True
-    dynamic_scale=False
-    gd_sign=True
-    averageloss_lambda=2.0
-    gaussian_smooth=True
-    gaussian_kernel=3
-    gaussian_sigma=0.8
-    dct_lowpass=True
-    dct_keep=5
-    dct_mask_shape=triangular
-    smooth_every=3
-    model=openai/clip-vit-large-patch14-336
-"""
-
 import argparse
-import importlib.util
-import os
-import random
+import csv
+import json
+import re
 import sys
+import time
 from pathlib import Path
 
-import torch
-import torch.nn.functional as F
+IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png", ".webp", ".bmp"}
+REPO = Path(__file__).resolve().parents[1]
 
 
-VALID_EXTS = {".png", ".jpg", ".jpeg", ".webp", ".bmp", ".tiff"}
+def natural_key(path):
+    return [int(t) if t.isdigit() else t.lower() for t in re.split(r"(\d+)", Path(path).name)]
 
 
-def import_base_attack_module(base_script_path=None):
-    candidates = []
-
-    if base_script_path is not None:
-        candidates.append(Path(base_script_path).expanduser())
-
-    here = Path(__file__).resolve().parent
-    candidates.extend([
-        here / "attack.py",
-        here.parent / "attack.py",
-    ])
-
-    base_path = None
-    for p in candidates:
-        if p.exists():
-            base_path = p
-            break
-
-    if base_path is None:
-        msg = "Could not find attack.py. Tried:\n"
-        msg += "\n".join(f"  {p}" for p in candidates)
-        raise FileNotFoundError(msg)
-
-    print(f"[INFO] Importing base attack code from: {base_path}")
-
-    spec = importlib.util.spec_from_file_location("base_prm_attack_faceshield", str(base_path))
-    module = importlib.util.module_from_spec(spec)
-    sys.modules["base_prm_attack_faceshield"] = module
-    spec.loader.exec_module(module)
-    return module
+def album_paths(album, order=None):
+    """Album order = the file names listed in ``order`` (one per line) or, by default, natural sort of the names."""
+    album = Path(album)
+    if order:
+        names = [line.strip() for line in Path(order).read_text().splitlines() if line.strip()]
+        paths = [album / name for name in names]
+        missing = [p for p in paths if not p.is_file()]
+        if missing:
+            raise FileNotFoundError(f"listed in --order but missing: {missing}")
+        return paths
+    return sorted((p for p in album.iterdir() if p.suffix.lower() in IMAGE_SUFFIXES), key=natural_key)
 
 
-def list_images(folder):
-    paths = []
-    for name in sorted(os.listdir(folder)):
-        path = os.path.join(folder, name)
-        if os.path.isfile(path) and os.path.splitext(name)[1].lower() in VALID_EXTS:
-            paths.append(path)
+def coco_paths(coco_dir, ids_json=REPO / "configs" / "coco100.json"):
+    ids = json.loads(Path(ids_json).read_text())["image_ids"]
+    paths = [Path(coco_dir) / f"{i:012d}.jpg" for i in ids]
+    missing = [p.name for p in paths if not p.is_file()]
+    if missing:
+        raise FileNotFoundError(f"{len(missing)} COCO-100 calibration photos missing in {coco_dir} "
+                                f"(run scripts/download_coco100.py): {missing[:3]} ...")
     return paths
 
 
-def count_pngs(folder):
-    if not os.path.isdir(folder):
-        return 0
-    return len([
-        f for f in os.listdir(folder)
-        if os.path.isfile(os.path.join(folder, f))
-        and os.path.splitext(f)[1].lower() == ".png"
-    ])
+def protect_album(paths, out, seed, encoder, person_tokens, public_images, device, face_model=None, face_rows=None,
+                  steps=None, only=None, bank=None, log=print):
+    """The whole album pipeline with already-loaded models (also used by the CPU equivalence test).
+
+    paths          album photos in album order (n >= 2)
+    person_tokens  list of 576-bool tensors (DeepLabV3 person patches), one per photo; ignored when ``bank`` is given
+    public_images  calibration photos (paths or 336 x 336 tensors); ignored when ``bank`` is given
+    face_model     a loaded BuffaloL (or None: face term absent); face_rows = [(matrix or None, clean)] per photo
+    only           optional set of indices to protect (default: all)
+    Returns a list of per-photo records."""
+    import torch
+    from PIL import Image
+
+    from .bank import album_features, album_sums, bank_without, build_ces_bank, prototype_from_sums
+    from .config import STEPS
+    from .encoder import read_image
+    from .face import FaceTerm
+    from .optim import protect
+
+    steps = STEPS if steps is None else steps
+    if len(paths) < 2:
+        raise ValueError("an album needs at least two photos of the same person (leave-one-out references)")
+    out = Path(out)
+    out.mkdir(parents=True, exist_ok=True)
+    album = [read_image(p, device) for p in paths]
+    features = album_features(encoder, album)
+    sums = album_sums(features)
+    if bank is None:
+        bank = build_ces_bank(encoder, album, person_tokens, public_images, features=features)
+    records = []
+    for index, path in enumerate(paths):
+        if only is not None and index not in only:
+            continue
+        prototype = prototype_from_sums(sums, features[index], len(album))
+        query_bank = bank_without(bank, index)
+        face = FaceTerm(None, face_rows, index, device, model=face_model) if face_model is not None else None
+        began = time.monotonic()
+        png, trace = protect(album[index], encoder, prototype, query_bank, face, seed + index, steps)
+        stem = Path(path).stem
+        Image.fromarray(png[0].permute(1, 2, 0).cpu().numpy()).save(out / f"{stem}.png")
+        with (out / f"{stem}_loss.csv").open("w", newline="") as stream:
+            writer = csv.DictWriter(stream, fieldnames=list(trace[0]))
+            writer.writeheader()
+            writer.writerows(trace)
+        linf = float((png.float() - album[index].round().clamp(0, 255)).abs().max())
+        record = dict(photo=Path(path).name, index=index, image_seed=seed + index, steps=steps,
+                      face_active=bool(face is not None and face.active),
+                      anchors_used=int(query_bank[0][0].shape[0]), linf_vs_rounded_clean=linf,
+                      seconds=round(time.monotonic() - began, 1), final=trace[-1])
+        records.append(record)
+        log(json.dumps(record))
+        del png, trace
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+    return records
 
 
-def get_subset_leave_one_out_averageloss(
-    per_image_features,
-    feature_sum,
-    exclude_idx,
-    subset_size=-1,
-    subset_seed=1234,
-):
-    """
-    Build average-loss features from K other identity images.
-
-    subset_size <= 0 or subset_size >= N-1:
-        use all other images, matching original leave-one-out.
-
-    subset_size = K:
-        use exactly K other images.
-
-    The attacked image exclude_idx is never included.
-    """
-    n = len(per_image_features)
-    if n < 2:
-        raise ValueError(f"Need at least 2 images for averageloss; got {n}")
-
-    other_indices = [j for j in range(n) if j != exclude_idx]
-    max_k = len(other_indices)
-
-    if subset_size is None:
-        subset_size = -1
-    subset_size = int(subset_size)
-
-    if subset_size <= 0 or subset_size >= max_k:
-        excluded_features = per_image_features[exclude_idx]
-        avg = []
-        for layer_idx in range(len(feature_sum)):
-            avg.append((feature_sum[layer_idx] - excluded_features[layer_idx]) / (n - 1))
-        print(f"  Averageloss subset: using all K={max_k}/{max_k} other images")
-        return avg, max_k, other_indices
-
-    if subset_size < 1:
-        raise ValueError(f"--averageloss_k must be -1/all or >=1, got {subset_size}")
-    if subset_size > max_k:
-        raise ValueError(f"Requested K={subset_size}, but max K={max_k}")
-
-    rng = random.Random(int(subset_seed) + int(exclude_idx) * 1000003)
-    selected = sorted(rng.sample(other_indices, subset_size))
-
-    avg = []
-    for layer_idx in range(len(per_image_features[0])):
-        layer_sum = None
-        for j in selected:
-            feat = per_image_features[j][layer_idx]
-            layer_sum = feat.clone() if layer_sum is None else layer_sum + feat
-        avg.append(layer_sum / subset_size)
-
-    print(f"  Averageloss subset: using K={subset_size}/{max_k} other images; indices={selected}")
-    return avg, subset_size, selected
+def parse_args(argv=None):
+    p = argparse.ArgumentParser(
+        prog="python -m anti_persona.protect",
+        description="Anti-Persona (final method): protect every photo of one person's album, leave-one-out.",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    p.add_argument("--album", type=Path, required=True, help="folder with >= 2 photos of ONE person")
+    p.add_argument("--out", type=Path, required=True, help="output folder (PNGs, loss tables, album.json)")
+    p.add_argument("--seed", type=int, default=0, help="run seed; photo i uses image seed = seed + i (the paper: 0 and 202)")
+    p.add_argument("--order", type=Path, default=None,
+                   help="text file listing the album file names in album order (default: natural sort of names)")
+    p.add_argument("--only", nargs="+", default=None, help="protect only these file names (references still use the whole album)")
+    p.add_argument("--weights", type=Path, default=REPO / "weights",
+                   help="folder filled by scripts/download_weights.py (DeepLabV3, buffalo_l torch weights, det_10g.onnx)")
+    p.add_argument("--coco-dir", type=Path, default=REPO / "data" / "coco100",
+                   help="the 100 COCO val2017 calibration photos of configs/coco100.json (scripts/download_coco100.py)")
+    p.add_argument("--clip", default=None,
+                   help="CLIP ViT-L/14-336 name or local folder (default: openai/clip-vit-large-patch14-336 from the HF hub)")
+    p.add_argument("--bank", type=Path, default=None, help="reuse a stored evidence bank (.pt) built for exactly this album order")
+    p.add_argument("--face-cache", type=Path, default=None,
+                   help="recorded face alignments JSON (rows: selected_matrix, clean_png) instead of running the detector")
+    p.add_argument("--steps", type=int, default=501, help="optimisation steps (501 in the paper)")
+    p.add_argument("--device", default="cuda")
+    p.add_argument("--threads", type=int, default=2, help="CPU threads (JPEG round trips, face alignment)")
+    return p.parse_args(argv)
 
 
-def main():
-    parser = argparse.ArgumentParser("Average-loss K ablation wrapper")
+def main(argv=None):
+    args = parse_args(argv)
+    import torch
 
-    parser.add_argument("--base_script_path", type=str, default=None)
+    from .bank import save_ces_bank
+    from .config import CLIP_NAME
+    from .encoder import ClipEncoder
+    from .face import face_rows_detect, face_rows_from_cache, load_buffalo_l
+    from .optim import seed_everything
+    from .person import DEEPLAB_FILE, load_deeplab, person_tokens, save_tokens
 
-    parser.add_argument("--input_path", type=str, default=None)
-    parser.add_argument("--input_dir", type=str, default=None)
-    parser.add_argument("--target_path", type=str, default=None)
-    parser.add_argument("--target_dir", type=str, default=None)
-    parser.add_argument("--output_dir", type=str, required=True)
+    torch.set_num_threads(args.threads)
+    paths = album_paths(args.album, args.order)
+    if len(paths) < 2:
+        sys.exit(f"{args.album}: an album needs at least two photos of the same person (found {len(paths)})")
+    only = None
+    if args.only:
+        names = [p.name for p in paths]
+        only = {names.index(n) for n in args.only}
+    cache = args.out / "_cache"
+    cache.mkdir(parents=True, exist_ok=True)
+    w = args.weights
+    face_weights, detector = w / "buffalo_l_w600k_r50_torch.pt", w / "buffalo_l" / "det_10g.onnx"
+    for needed in [face_weights] + ([] if args.face_cache else [detector]):
+        if not needed.is_file():
+            sys.exit(f"missing {needed}: run scripts/download_weights.py first")
 
-    parser.add_argument("--model", type=str, default="openai/clip-vit-large-patch14-336")
-    parser.add_argument("--epsilon", type=float, default=4.0)
-    parser.add_argument("--num_iters", type=int, default=500)
-    parser.add_argument("--lr", type=float, default=0.5)
-
-    parser.add_argument("--seed", type=int, default=42)
-    parser.add_argument("--strict_determinism", action="store_true")
-    parser.add_argument("--device", type=str, default="cuda" if torch.cuda.is_available() else "cpu")
-
-    parser.add_argument("--averageloss_k", type=int, default=-1)
-    parser.add_argument("--averageloss_subset_seed", type=int, default=1234)
-    parser.add_argument("--averageloss_lambda", type=float, default=2.0)
-
-    # Defaults match relaxed_smooth_eps4_cleaner.
-    parser.add_argument("--no_resize_to_clip", action="store_true")
-    parser.add_argument("--resize_size", type=int, default=None)
-    parser.add_argument("--dynamic_scale", action="store_true")
-    parser.add_argument("--normalized_gd", action="store_true")
-
-    parser.add_argument("--no_gaussian_smooth", action="store_true")
-    parser.add_argument("--gaussian_kernel", type=int, default=3)
-    parser.add_argument("--gaussian_sigma", type=float, default=0.8)
-    parser.add_argument("--gaussian_mask_dilation", type=int, default=9)
-
-    parser.add_argument("--no_dct_lowpass", action="store_true")
-    parser.add_argument("--dct_block_size", type=int, default=8)
-    parser.add_argument("--dct_keep", type=int, default=5)
-    parser.add_argument("--dct_mask_shape", type=str, default="triangular", choices=["triangular", "square"])
-    parser.add_argument("--smooth_every", type=int, default=3)
-
-    parser.add_argument("--skip_if_complete", action="store_true")
-    parser.add_argument("--overwrite_partial", action="store_true")
-
-    args = parser.parse_args()
-
-    if args.input_path is None and args.input_dir is None:
-        raise ValueError("Provide --input_path or --input_dir")
-    if args.target_path is None and args.target_dir is None:
-        # Default neutral anchor: the bundled gray image next to this script.
-        default_target = Path(__file__).resolve().parent / "assets" / "gray_image.png"
-        if default_target.exists():
-            args.target_path = str(default_target)
-            print(f"[INFO] No target given; using bundled neutral anchor: {default_target}")
-        else:
-            raise ValueError("Provide --target_path or --target_dir")
-
-    base = import_base_attack_module(args.base_script_path)
-
-    resize_to_clip = not args.no_resize_to_clip
-    dynamic_scale = args.dynamic_scale
-    gd_sign = not args.normalized_gd
-    gaussian_smooth = not args.no_gaussian_smooth
-    dct_lowpass = not args.no_dct_lowpass
-
-    print("=" * 70)
-    print("Average-loss K ablation attack")
-    print("=" * 70)
-    print(f"Model:                  {args.model}")
-    print(f"Epsilon:                {args.epsilon}")
-    print(f"Iterations:             {args.num_iters}")
-    print(f"LR:                     {args.lr}")
-    print(f"Seed:                   {args.seed}")
-    print(f"Resize to CLIP:          {resize_to_clip}")
-    print(f"Dynamic scale:           {dynamic_scale}")
-    print(f"GD sign:                 {gd_sign}")
-    print(f"Averageloss lambda:      {args.averageloss_lambda}")
-    print(f"Averageloss K:           {args.averageloss_k}")
-    print(f"Gaussian smooth:         {gaussian_smooth}")
-    print(f"Gaussian kernel/sigma:   {args.gaussian_kernel}/{args.gaussian_sigma}")
-    print(f"DCT low-pass:            {dct_lowpass}")
-    print(f"DCT keep/mask:           {args.dct_keep}/{args.dct_mask_shape}")
-    print(f"Smooth every:            {args.smooth_every}")
-    print(f"Output dir:              {args.output_dir}")
-    print("=" * 70)
-
-    base.set_global_seeds(args.seed, strict_determinism=args.strict_determinism)
-
-    if args.input_path is not None:
-        source_paths = [args.input_path]
+    seed_everything(args.seed)
+    bank = None
+    tokens, public = None, None
+    names = [p.name for p in paths]
+    cached = (cache / "bank.pt").is_file() and (cache / "bank.json").is_file() and \
+        json.loads((cache / "bank.json").read_text()).get("album") == names
+    if args.bank is not None or cached:
+        bank_path = args.bank or cache / "bank.pt"
+        bank = torch.load(bank_path, map_location=args.device, weights_only=True)
+        print(f"evidence bank: {bank_path}")
     else:
-        source_paths = list_images(args.input_dir)
+        deeplab = load_deeplab(w / DEEPLAB_FILE, args.device)
+        tokens = []
+        for p in paths:
+            t, mask336 = person_tokens(deeplab, p, args.device)
+            save_tokens(cache / "person_tokens" / f"{p.stem}.npz", t, mask336)
+            if int(t.sum()) == 0:
+                print(f"warning: no person patch found in {p.name}; it contributes no CES anchor")
+            tokens.append(t)
+        del deeplab
+        public = coco_paths(args.coco_dir)
 
-    if args.target_path is not None:
-        target_paths = [args.target_path]
-    else:
-        target_paths = list_images(args.target_dir)
-
-    if len(source_paths) == 0:
-        raise ValueError("No source images found")
-    if len(target_paths) == 0:
-        raise ValueError("No target images found")
-    if len(source_paths) < 2:
-        raise ValueError("K ablation requires at least 2 source images")
-
-    max_k = len(source_paths) - 1
-    if args.averageloss_k > max_k:
-        raise ValueError(f"Requested K={args.averageloss_k}, but max K={max_k}")
-    if args.averageloss_k != -1 and args.averageloss_k < 1:
-        raise ValueError("--averageloss_k must be -1/all or >=1")
-
-    os.makedirs(args.output_dir, exist_ok=True)
-
-    if args.skip_if_complete:
-        existing = count_pngs(args.output_dir)
-        if existing == len(source_paths):
-            print(f"[SKIP] Output complete: {existing}/{len(source_paths)}")
-            return
-        if existing > 0 and existing < len(source_paths):
-            if args.overwrite_partial:
-                print(f"[CLEAN] Partial output: {existing}/{len(source_paths)}. Deleting PNGs.")
-                for f in os.listdir(args.output_dir):
-                    if f.lower().endswith(".png"):
-                        os.remove(os.path.join(args.output_dir, f))
-            else:
-                raise RuntimeError("Partial output found. Pass --overwrite_partial to rerun.")
-
-    print(f"Source images: {len(source_paths)}")
-    print(f"Target images: {len(target_paths)}")
-    print(f"Max K for this class: {max_k}")
-    print()
-
-    model_components = base.load_model(args.model, args.device)
-
-    clip_resize = None
-    if args.resize_size is not None:
-        clip_resize = args.resize_size
-        print(f"  Resize override: {clip_resize}x{clip_resize}")
-    elif resize_to_clip:
-        clip_resize = model_components.get("native_size", None)
-        if clip_resize is None:
-            clip_resize = 224
-            print(f"  WARNING: No native_size found, defaulting to {clip_resize}")
-        print(f"  Resizing all images to {clip_resize}x{clip_resize} before attack")
-    print()
-
-    print("=" * 70)
-    print("Pre-computing identity features for K-prototype ablation")
-    print("=" * 70)
-    per_image_features, feature_sum = base.compute_averageloss_features(
-        source_paths,
-        model_components,
-        args.device,
-        clip_resize=clip_resize,
-    )
-    print()
-
-    for i, src_path in enumerate(source_paths):
-        fname = os.path.basename(src_path)
-        print("=" * 70)
-        print(f"[{i + 1}/{len(source_paths)}] Attacking: {fname}")
-        print("=" * 70)
-
-        base.seed_for_image(args.seed, i)
-        print(f"  RNG seed for this image: {args.seed + i}")
-
-        image_tensor = base.load_image(src_path)
-        print(f"  Loaded source: {list(image_tensor.shape)}, range: [{image_tensor.min():.1f}, {image_tensor.max():.1f}]")
-
-        if clip_resize is not None:
-            image_tensor = F.interpolate(
-                image_tensor.unsqueeze(0),
-                (clip_resize, clip_resize),
-                mode="bicubic",
-                align_corners=False,
-            ).squeeze(0).clamp(0, 255)
-            print(f"  Resized source to: {list(image_tensor.shape)}")
-
-        tgt_path = target_paths[i % len(target_paths)]
-        target_tensor = base.load_image(tgt_path)
-        if clip_resize is not None:
-            target_tensor = F.interpolate(
-                target_tensor.unsqueeze(0),
-                (clip_resize, clip_resize),
-                mode="bicubic",
-                align_corners=False,
-            ).squeeze(0).clamp(0, 255)
-
-        print(f"  Target: {os.path.basename(tgt_path)} ({list(target_tensor.shape)})")
-
-        avg_features, used_k, selected = get_subset_leave_one_out_averageloss(
-            per_image_features=per_image_features,
-            feature_sum=feature_sum,
-            exclude_idx=i,
-            subset_size=args.averageloss_k,
-            subset_seed=args.averageloss_subset_seed,
-        )
-
-        print(f"  Using average prototype from K={used_k} other image(s), lambda={args.averageloss_lambda}")
-
-        adv_image, delta = base.prm_attack(
-            image_tensor=image_tensor,
-            model_components=model_components,
-            target_tensor=target_tensor,
-            averageloss_features=avg_features,
-            averageloss_lambda=args.averageloss_lambda,
-            epsilon=args.epsilon,
-            num_iters=args.num_iters,
-            lr=args.lr,
-            dynamic_scale=dynamic_scale,
-            device=args.device,
-            gd_sign=gd_sign,
-            gaussian_smooth=gaussian_smooth,
-            gaussian_kernel=args.gaussian_kernel,
-            gaussian_sigma=args.gaussian_sigma,
-            gaussian_mask_dilation=args.gaussian_mask_dilation,
-            dct_lowpass=dct_lowpass,
-            dct_block_size=args.dct_block_size,
-            dct_keep=args.dct_keep,
-            dct_mask_shape=args.dct_mask_shape,
-            smooth_every=args.smooth_every,
-        )
-
-        out_path = os.path.join(args.output_dir, fname)
-        saved_path = base.save_image(adv_image, out_path)
-
-        print(f"  Saved: {saved_path}")
-        print(f"  Output image size: {list(adv_image.shape)}")
-        print(f"  Delta L_inf: {delta.abs().max().item():.2f}, L2: {delta.norm().item():.2f}")
-        print()
-
-    print("=" * 70)
-    print("Done.")
-    print(f"Adversarial images saved to: {args.output_dir}")
-    print("=" * 70)
+    local_clip = w / "clip-vit-large-patch14-336"
+    encoder = ClipEncoder(args.device, args.clip or (str(local_clip) if (local_clip / "config.json").is_file() else CLIP_NAME))
+    if bank is None:
+        from .bank import album_features, build_ces_bank
+        from .encoder import read_image
+        album = [read_image(p, args.device) for p in paths]
+        bank = build_ces_bank(encoder, album, tokens, public, features=album_features(encoder, album))
+        save_ces_bank(bank, cache / "bank.pt")
+        (cache / "bank.json").write_text(json.dumps(dict(
+            album=names, anchors_per_photo=[int((bank[0]["reference_index"] == i).sum()) for i in range(len(paths))],
+            coco_ids="configs/coco100.json", quantile=0.9, temperature=0.05), indent=1) + "\n")
+        del album
+    rows = face_rows_from_cache(args.face_cache, args.device) if args.face_cache else face_rows_detect(paths, args.device, detector)
+    face_model = load_buffalo_l(face_weights, args.device)
+    records = protect_album(paths, args.out, args.seed, encoder, None, None, args.device, face_model=face_model,
+                            face_rows=rows, steps=args.steps, only=only, bank=bank)
+    (args.out / "album.json").write_text(json.dumps(dict(
+        album=[p.name for p in paths], seed=args.seed, steps=args.steps,
+        faces=[m is not None for m, _ in rows], records=records), indent=1) + "\n")
 
 
 if __name__ == "__main__":

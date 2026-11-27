@@ -1,0 +1,49 @@
+# Anti-Persona, final method. Every hyper-parameter that produced the paper's numbers.
+# For reading: the executable values live in anti_persona/config.py (tests/test_equivalence.py checks the
+# package against the reference implementation). Pixel quantities are in units of [0, 255].
+
+objective:            # minimise  L = w_self*L_self + w_proto*L_proto + w_ces*L_CES + w_face*L_face
+  w_self: 1.0         # mean token cosine to the CLEAN photo (577 tokens x 25 hidden states)
+  w_proto: 0.5        # mean token cosine to the leave-one-out album mean, same grid position, ALL 577 tokens, no mask
+  w_ces: 2.0          # Calibrated Evidence Suppression
+  w_face: 0.125       # cosine to the leave-one-out buffalo_l face prototype (absent if no face)
+
+encoder:
+  name: openai/clip-vit-large-patch14-336
+  revision: ce19dc912ca5cd21c8a653c79e251e808ccabcd1
+  input: 336x336, bicubic squash, CLIP mean/std
+  hidden_states: 25   # pre-transformer layer-norm output + the output of each of the 24 blocks; equal weights
+  tokens: 577         # summary token + 24 x 24 patches
+
+ces:
+  temperature: 0.05   # beta: r_k = beta * (logsumexp_j cos(a_k, f_j)/beta - log 576)
+  margin: 0.05        # m
+  top_share: 0.25     # mean over the strongest 25% of anchors per hidden state
+  anchors_per_photo: 32          # evenly spaced over the photo's person patches, unit length
+  calibration_set: configs/coco100.json   # 100 COCO val2017 scenes with people (sampling seed 42)
+  threshold_quantile: 0.9        # tau_k = 90th percentile of r_k over the calibration set
+  person_segmenter: DeepLabV3-ResNet101 (torchvision COCO_WITH_VOC_LABELS_V1, class 15)
+  person_probability: 0.5
+  mask_dilation: 0.02            # of the long side
+  patch_person_fraction: 0.25    # a patch is "person" when >= 25% of it is person
+  leave_one_out: true            # the query photo's own anchors are removed
+
+face:
+  recogniser: insightface buffalo_l w600k_r50 (torch replay of the ONNX graph)
+  detector: SCRFD det_10g, 640x640, threshold 0.5, largest face
+  alignment: 5-point similarity to the 112x112 ArcFace template (forward = cv2.warpAffine, backward = bilinear)
+  input: (x/255 - 0.5)/0.5, channels B,G,R
+  prototype: mean embedding of the other album faces (leave-one-out)
+
+optimisation:
+  steps: 501
+  step_size: 0.5      # 0.5/255, signed gradient descent
+  epsilon: 4.0        # 4/255, l_inf
+  start: zero
+  jpeg_in_the_loop: {probability: 0.7, quality: [60, 95], subsampling: "4:4:4", gradient: straight-through}
+  gradient_smoothing: {kernel: 3x3 Gaussian, sigma: 3, every: 3, padding: zero}
+  output: whole-number PNG within 4 of both the clean and the rounded clean 336x336 image
+
+seeds:
+  run_seeds: [0, 202]     # image seed = run seed + position of the photo in its album (drives the JPEG draws only)
+  victim_seed: 42

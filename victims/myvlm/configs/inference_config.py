@@ -40,6 +40,10 @@ class InferenceConfig:
     device: str = 'cuda'
     # Torch dtype
     torch_dtype: torch.dtype = torch.bfloat16
+    # Face head for PERSON concepts; must match the head the checkpoint was trained with
+    face_head: str = 'dfa'
+    # Gate threshold. None keeps the hardcoded value below (0.55 for people); upstream MyVLM uses 0.675
+    threshold: Optional[float] = None
 
     def __post_init__(self):
         if not self.concept_head_path.name.startswith('seed_'):
@@ -49,6 +53,8 @@ class InferenceConfig:
             self.checkpoint_path = self.checkpoint_path / self.concept_name / f'seed_{self.seed}'
 
         self._verify_concept_embeddings_exist()
+        if self.concept_type == ConceptType.PERSON:
+            self._verify_face_head_matches_checkpoint()
         if self.concept_type == ConceptType.OBJECT:
             self._verify_concept_heads_exist()
 
@@ -60,7 +66,8 @@ class InferenceConfig:
 #EFFECT ON THRESHOLD ON TRAINING
         # Set the threshold value for recognizing the concept
         #if self.threshold is None:
-        self.threshold = 0.5 if self.concept_type == ConceptType.OBJECT else 0.55 # HARDCODED
+        if self.threshold is None:
+            self.threshold = 0.5 if self.concept_type == ConceptType.OBJECT else 0.55 # HARDCODED
 
         # Get the prompts. If None is given, then we use the default list for each VLM and task
         if self.prompts is None:
@@ -71,6 +78,18 @@ class InferenceConfig:
     def _verify_concept_heads_exist(self):
         if not self.concept_head_path.exists() and self.concept_type == ConceptType.OBJECT:
             raise ValueError(f"Concept head path {self.concept_head_path} does not exist!")
+
+    def _verify_face_head_matches_checkpoint(self):
+        # Keys are face embeddings from the training-time head; a different head at inference
+        # compares embeddings from two unrelated spaces. Checkpoints that predate the field used 'dfa'.
+        for saved in self.checkpoint_path.glob('config_*.yaml'):
+            trained_with = 'dfa'
+            for line in saved.read_text().splitlines():
+                if line.startswith('face_head:'):
+                    trained_with = line.split(':', 1)[1].strip()
+            if trained_with != self.face_head:
+                raise ValueError(f"{saved} was trained with face_head={trained_with!r}, "
+                                 f"but inference asks for {self.face_head!r}")
 
     def _verify_concept_embeddings_exist(self):
         if not self.checkpoint_path.exists():

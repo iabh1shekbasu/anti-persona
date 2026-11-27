@@ -8,7 +8,7 @@ from PIL import Image
 from concept_embedding_training import data_utils
 from concept_embedding_training.data_utils import Data, EmbeddingData, load_data
 from concept_heads.clip.head import CLIPConceptHead
-from concept_heads.face_recognition.head import FaceConceptHead
+from concept_heads.face_recognition import build_face_head
 from configs.inference_config import InferenceConfig
 from configs.train_config import EmbeddingTrainingConfig
 from inference.run_myvlm_inference import run_inference
@@ -48,7 +48,7 @@ def main(cfg: EmbeddingTrainingConfig):
         head_path = cfg.concept_head_path / f'{CLIP_MODEL_NAME}-{cfg.concept_name}-step-{cfg.classifier_step}.pt'
         concept_head = CLIPConceptHead(head_path)
     else:
-        concept_head = FaceConceptHead()
+        concept_head = build_face_head(cfg.face_head)
 
     # Load the data
     data_dict = load_data(concept_head, cfg)
@@ -84,7 +84,8 @@ def main(cfg: EmbeddingTrainingConfig):
         concept_head_path=cfg.concept_head_path,
         prompts=VLM_TO_PROMPTS[cfg.vlm_type][cfg.personalization_task],
         device=cfg.device,
-        torch_dtype=cfg.torch_dtype
+        torch_dtype=cfg.torch_dtype,
+        face_head=cfg.face_head
     )
     outputs = run_inference(myvlm,
                             concept_signals=data_dict['val'].concept_signals,
